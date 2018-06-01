@@ -57,7 +57,7 @@ def get_training_set(opt, spatial_transform, temporal_transform,
 
 
 def get_validation_set(opt, spatial_transform, temporal_transform,
-                       target_transform, score_sens_mode):
+                       target_transform, score_sens_mode=False):
     assert opt.dataset in ['kinetics', 'activitynet', 
             'ucf101', 'hmdb51', 'something']
 
@@ -153,7 +153,7 @@ def get_test_set(opt, spatial_transform, temporal_transform, target_transform,
             opt.annotation_path,
             subset,
             # 0,
-            1, 
+            1, # sample 1 clip each video
             spatial_transform,
             temporal_transform,
             target_transform,
@@ -176,7 +176,7 @@ def get_test_set(opt, spatial_transform, temporal_transform, target_transform,
             opt.annotation_path,
             subset,
             # 0,
-            1, 
+            1, # sample 1 clip each video
             spatial_transform,
             temporal_transform,
             target_transform,

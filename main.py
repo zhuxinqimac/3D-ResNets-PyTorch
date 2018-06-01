@@ -122,7 +122,7 @@ if __name__ == '__main__':
             optimizer, 'min', patience=opt.lr_patience)
     if not opt.no_val:
         spatial_transform = Compose([
-            Scale(opt.sample_size),
+            # Scale(opt.sample_size),
             CenterCrop(opt.sample_size),
             ToTensor(opt.norm_value), norm_method
         ])
@@ -148,7 +148,8 @@ if __name__ == '__main__':
 
         target_transform = ClassLabel()
         validation_data = get_validation_set(
-            opt, spatial_transform, temporal_transform, target_transform)
+            opt, spatial_transform, temporal_transform, 
+            target_transform)
         val_loader = torch.utils.data.DataLoader(
             validation_data,
             batch_size=opt.batch_size,

@@ -16,9 +16,10 @@ def calculate_video_results(output_buffer, video_id, test_results, class_names):
 
     video_results = []
     for i in range(sorted_scores.size(0)):
+        # print(locs[i].item())
         video_results.append({
-            'label': class_names[locs[i]],
-            'score': sorted_scores[i]
+            'label': class_names[locs[i].item()],
+            'score': sorted_scores[i].item()
         })
 
     test_results['results'][video_id] = video_results
@@ -57,6 +58,7 @@ def test(data_loader, model, opt, class_names):
             with open(
                     os.path.join(opt.result_path, '{}.json'.format(
                         opt.test_subset)), 'w') as f:
+                print(test_results)
                 json.dump(test_results, f)
 
         batch_time.update(time.time() - end_time)

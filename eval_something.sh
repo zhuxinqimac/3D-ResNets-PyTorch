@@ -1,8 +1,8 @@
 CUDA_VISIBLE_DEVICES=1 python main.py --root_path \
     /home/xinqizhu/repo/3D-ResNets-PyTorch --video_path \
     /home/xinqizhu/Something_frames --annotation_path \
-    /home/xinqizhu/repo/TRN-pytorch/video_datasets/something/something.json \
-    --result_path Something_results/results_34_s_s --dataset something \
+    /home/xinqizhu/repo/3D-ResNets-PyTorch/annots/something.json \
+    --result_path Something_results/results_34_n_n --dataset something \
     --n_classes 174 --n_finetune_classes 174 --pretrain_path \
     Something_results/results_34_s_s/save_50.pth \
     --ft_begin_index 3 \
