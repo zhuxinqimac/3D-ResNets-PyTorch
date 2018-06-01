@@ -108,7 +108,7 @@ class UCFclassification(object):
         hit_at_k = compute_video_hit_at_k(self.ground_truth,
                                           self.prediction, top_k=self.top_k)
         if self.verbose:
-            print ('[RESULTS] Performance on ActivityNet untrimmed video '
+            print ('[RESULTS] Performance on UCF101 video '
                    'classification task.')
             print '\tError@{}: {}'.format(self.top_k, 1.0 - hit_at_k)
             #print '\tAvg Hit@{}: {}'.format(self.top_k, avg_hit_at_k)

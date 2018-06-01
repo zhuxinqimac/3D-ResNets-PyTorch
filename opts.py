@@ -159,6 +159,40 @@ def parse_opts():
     parser.add_argument(
         '--test', action='store_true', help='If true, test is performed.')
     parser.set_defaults(test=False)
+
+    # ==== Modified ====
+    parser.add_argument(
+            '--train_reverse', 
+            action='store_true', 
+            help='If true, train with reversed frames.')
+    parser.set_defaults(train_reverse=False)
+    parser.add_argument(
+            '--train_shuffle', 
+            action='store_true', 
+            help='If true, train with shuffled frames.')
+    parser.set_defaults(train_shuffle=False)
+    parser.add_argument(
+            '--test_reverse', 
+            action='store_true', 
+            help='If true, test with reversed frames.')
+    parser.set_defaults(test_reverse=False)
+    parser.add_argument(
+            '--test_shuffle', 
+            action='store_true', 
+            help='If true, test with shuffled frames.')
+    parser.set_defaults(test_shuffle=False)
+    parser.add_argument(
+            '--train_temp_crop', 
+            default='dense', 
+            type=str, 
+            help='Temporal cropping method (dense | sparse) in train.')
+    parser.add_argument(
+            '--test_temp_crop', 
+            default='dense', 
+            type=str, 
+            help='Temporal cropping method (dense | sparse) in test.')
+    # ==================
+
     parser.add_argument(
         '--test_subset',
         default='val',

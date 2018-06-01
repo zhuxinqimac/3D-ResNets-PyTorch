@@ -13,7 +13,9 @@ from mean import get_mean, get_std
 from spatial_transforms import (
     Compose, Normalize, Scale, CenterCrop, CornerCrop, MultiScaleCornerCrop,
     MultiScaleRandomCrop, RandomHorizontalFlip, ToTensor)
-from temporal_transforms import LoopPadding, TemporalRandomCrop
+from temporal_transforms import (
+    LoopPadding, TemporalRandomCrop,
+    ShuffleFrames, ReverseFrames, TemporalSparseSample)
 from target_transforms import ClassLabel, VideoID
 from target_transforms import Compose as TargetCompose
 from dataset import get_training_set, get_validation_set, get_test_set
@@ -24,9 +26,9 @@ import test
 
 if __name__ == '__main__':
     opt = parse_opts()
+    # opt.video_path = os.path.join(opt.root_path, opt.video_path)
+    # opt.annotation_path = os.path.join(opt.root_path, opt.annotation_path)
     if opt.root_path != '':
-        opt.video_path = os.path.join(opt.root_path, opt.video_path)
-        opt.annotation_path = os.path.join(opt.root_path, opt.annotation_path)
         opt.result_path = os.path.join(opt.root_path, opt.result_path)
         if opt.resume_path:
             opt.resume_path = os.path.join(opt.root_path, opt.resume_path)
@@ -45,7 +47,8 @@ if __name__ == '__main__':
     torch.manual_seed(opt.manual_seed)
 
     model, parameters = generate_model(opt)
-    print(model)
+    # print(model)
+    # input('...')
     criterion = nn.CrossEntropyLoss()
     if not opt.no_cuda:
         criterion = criterion.cuda()
@@ -71,7 +74,23 @@ if __name__ == '__main__':
             RandomHorizontalFlip(),
             ToTensor(opt.norm_value), norm_method
         ])
-        temporal_transform = TemporalRandomCrop(opt.sample_duration)
+        if opt.train_temp_crop == 'sparse':
+            temp_crop_method = TemporalSparseSample(opt.sample_duration)
+        else:
+            temp_crop_method = TemporalRandomCrop(opt.sample_duration)
+
+        if opt.train_reverse:
+            temporal_transform = Compose([
+                ReverseFrames(opt.sample_duration), 
+                temp_crop_method
+            ])
+        elif opt.train_shuffle:
+            temporal_transform = Compose([
+                ShuffleFrames(opt.sample_duration), 
+                temp_crop_method
+            ])
+        else:
+            temporal_transform = temp_crop_method
         target_transform = ClassLabel()
         training_data = get_training_set(opt, spatial_transform,
                                          temporal_transform, target_transform)
@@ -107,7 +126,26 @@ if __name__ == '__main__':
             CenterCrop(opt.sample_size),
             ToTensor(opt.norm_value), norm_method
         ])
-        temporal_transform = LoopPadding(opt.sample_duration)
+        # if not opt.test_temp_crop == 'sparse':
+        if opt.test_reverse:
+            temporal_transform = ReverseFrames(opt.sample_duration)
+        elif opt.test_shuffle:
+            temporal_transform = ShuffleFrames(opt.sample_duration)
+        else:
+            temporal_transform = LoopPadding(opt.sample_duration)
+        # else:
+            # temp_crop_method = TemporalSparseSample(opt.sample_duration)
+            # if opt.test_reverse:
+                # temporal_transform = Compose([
+                    # temp_crop_method, 
+                    # ReverseFrames(opt.sample_duration)])
+            # elif opt.test_shuffle:
+                # temporal_transform = Compose([
+                    # temp_crop_method, 
+                    # ShuffleFrames(opt.sample_duration)])
+            # else:
+                # temporal_transform = temp_crop_method
+
         target_transform = ClassLabel()
         validation_data = get_validation_set(
             opt, spatial_transform, temporal_transform, target_transform)
@@ -143,16 +181,42 @@ if __name__ == '__main__':
             scheduler.step(validation_loss)
 
     if opt.test:
+        # spatial_transform = Compose([
+            # Scale(int(opt.sample_size / opt.scale_in_test)),
+            # CornerCrop(opt.sample_size, opt.crop_position_in_test),
+            # ToTensor(opt.norm_value), norm_method
+        # ])
         spatial_transform = Compose([
-            Scale(int(opt.sample_size / opt.scale_in_test)),
-            CornerCrop(opt.sample_size, opt.crop_position_in_test),
+            # Scale(opt.sample_size),
+            CenterCrop(opt.sample_size),
             ToTensor(opt.norm_value), norm_method
         ])
-        temporal_transform = LoopPadding(opt.sample_duration)
+        # if not opt.test_temp_crop == 'sparse':
+        if opt.test_reverse:
+            temporal_transform = ReverseFrames(opt.sample_duration)
+        elif opt.test_shuffle:
+            temporal_transform = ShuffleFrames(opt.sample_duration)
+        else:
+            temporal_transform = LoopPadding(opt.sample_duration)
+
+        temp_crop_method = TemporalRandomCrop(opt.sample_duration)
+        # else:
+            # temp_crop_method = TemporalSparseSample(opt.sample_duration)
+            # if opt.test_reverse:
+                # temporal_transform = Compose([
+                    # temp_crop_method, 
+                    # ReverseFrames(opt.sample_duration)])
+            # elif opt.test_shuffle:
+                # temporal_transform = Compose([
+                    # temp_crop_method, 
+                    # ShuffleFrames(opt.sample_duration)])
+            # else:
+                # temporal_transform = temp_crop_method
         target_transform = VideoID()
 
         test_data = get_test_set(opt, spatial_transform, temporal_transform,
-                                 target_transform)
+                                 target_transform, 
+                                 inner_temp_transform=temp_crop_method)
         test_loader = torch.utils.data.DataLoader(
             test_data,
             batch_size=opt.batch_size,

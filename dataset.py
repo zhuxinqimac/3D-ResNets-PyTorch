@@ -2,11 +2,13 @@ from datasets.kinetics import Kinetics
 from datasets.activitynet import ActivityNet
 from datasets.ucf101 import UCF101
 from datasets.hmdb51 import HMDB51
+from datasets.something import Something
 
 
 def get_training_set(opt, spatial_transform, temporal_transform,
-                     target_transform):
-    assert opt.dataset in ['kinetics', 'activitynet', 'ucf101', 'hmdb51']
+                     target_transform, score_sens_mode=False):
+    assert opt.dataset in ['kinetics', 'activitynet', 
+            'ucf101', 'hmdb51', 'something']
 
     if opt.dataset == 'kinetics':
         training_data = Kinetics(
@@ -31,7 +33,8 @@ def get_training_set(opt, spatial_transform, temporal_transform,
             'training',
             spatial_transform=spatial_transform,
             temporal_transform=temporal_transform,
-            target_transform=target_transform)
+            target_transform=target_transform, 
+            score_sens_mode=score_sens_mode)
     elif opt.dataset == 'hmdb51':
         training_data = HMDB51(
             opt.video_path,
@@ -40,13 +43,23 @@ def get_training_set(opt, spatial_transform, temporal_transform,
             spatial_transform=spatial_transform,
             temporal_transform=temporal_transform,
             target_transform=target_transform)
+    elif opt.dataset == 'something':
+        training_data = Something(
+            opt.video_path,
+            opt.annotation_path,
+            'training',
+            spatial_transform=spatial_transform,
+            temporal_transform=temporal_transform,
+            target_transform=target_transform, 
+            score_sens_mode=score_sens_mode)
 
     return training_data
 
 
 def get_validation_set(opt, spatial_transform, temporal_transform,
-                       target_transform):
-    assert opt.dataset in ['kinetics', 'activitynet', 'ucf101', 'hmdb51']
+                       target_transform, score_sens_mode):
+    assert opt.dataset in ['kinetics', 'activitynet', 
+            'ucf101', 'hmdb51', 'something']
 
     if opt.dataset == 'kinetics':
         validation_data = Kinetics(
@@ -77,7 +90,8 @@ def get_validation_set(opt, spatial_transform, temporal_transform,
             spatial_transform,
             temporal_transform,
             target_transform,
-            sample_duration=opt.sample_duration)
+            sample_duration=opt.sample_duration, 
+            score_sens_mode=score_sens_mode)
     elif opt.dataset == 'hmdb51':
         validation_data = HMDB51(
             opt.video_path,
@@ -88,11 +102,24 @@ def get_validation_set(opt, spatial_transform, temporal_transform,
             temporal_transform,
             target_transform,
             sample_duration=opt.sample_duration)
+    elif opt.dataset == 'something':
+        validation_data = Something(
+            opt.video_path,
+            opt.annotation_path,
+            'validation',
+            opt.n_val_samples,
+            spatial_transform,
+            temporal_transform,
+            target_transform,
+            sample_duration=opt.sample_duration, 
+            score_sens_mode=score_sens_mode)
     return validation_data
 
 
-def get_test_set(opt, spatial_transform, temporal_transform, target_transform):
-    assert opt.dataset in ['kinetics', 'activitynet', 'ucf101', 'hmdb51']
+def get_test_set(opt, spatial_transform, temporal_transform, target_transform, 
+        score_sens_mode=False, score_inf_mode=False, inner_temp_transform=None):
+    assert opt.dataset in ['kinetics', 'activitynet', 
+            'ucf101', 'hmdb51', 'something']
     assert opt.test_subset in ['val', 'test']
 
     if opt.test_subset == 'val':
@@ -125,11 +152,14 @@ def get_test_set(opt, spatial_transform, temporal_transform, target_transform):
             opt.video_path,
             opt.annotation_path,
             subset,
-            0,
+            # 0,
+            1, 
             spatial_transform,
             temporal_transform,
             target_transform,
-            sample_duration=opt.sample_duration)
+            sample_duration=opt.sample_duration, 
+            score_sens_mode=score_sens_mode, 
+            score_inf_mode=score_inf_mode)
     elif opt.dataset == 'hmdb51':
         test_data = HMDB51(
             opt.video_path,
@@ -140,5 +170,19 @@ def get_test_set(opt, spatial_transform, temporal_transform, target_transform):
             temporal_transform,
             target_transform,
             sample_duration=opt.sample_duration)
+    elif opt.dataset == 'something':
+        test_data = Something(
+            opt.video_path,
+            opt.annotation_path,
+            subset,
+            # 0,
+            1, 
+            spatial_transform,
+            temporal_transform,
+            target_transform,
+            sample_duration=opt.sample_duration, 
+            score_sens_mode=score_sens_mode, 
+            score_inf_mode=score_inf_mode, 
+            inner_temp_transform=inner_temp_transform)
 
     return test_data

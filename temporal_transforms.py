@@ -1,6 +1,39 @@
 import random
+import numpy as np
 import math
 
+class IdentityTransform(object):
+    def __call__(self, data):
+        return data
+
+
+class ReverseFrames(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, frame_indices):
+        out = frame_indices[::-1]
+
+        for index in out:
+            if len(out) >= self.size:
+                break
+            out.append(index)
+
+        return out
+
+class ShuffleFrames(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, frame_indices):
+        out = np.random.permutation(frame_indices).tolist()
+
+        for index in out:
+            if len(out) >= self.size:
+                break
+            out.append(index)
+
+        return out
 
 class LoopPadding(object):
 
@@ -108,5 +141,35 @@ class TemporalRandomCrop(object):
             if len(out) >= self.size:
                 break
             out.append(index)
+
+        return out
+
+class TemporalSparseSample(object):
+    """Temporally sample sparse frames across the whole range.
+
+    If the number of frames is less than the size,
+    duplicate the last frame to fit the size.
+
+    Args:
+        size (int): Desired output size of the crop.
+    """
+
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, frame_indices):
+        """
+        Args:
+            frame_indices (list): frame indices to be cropped.
+        Returns:
+            list: Cropped frame indices.
+        """
+        sample_len = min(len(frame_indices), self.size)
+        out_idx = sorted(random.sample(range(len(frame_indices)), sample_len))
+        frame_indices = np.array(frame_indices)
+        out = frame_indices[out_idx].tolist()
+
+        while len(out) < self.size:
+            out.append(out[-1])
 
         return out

@@ -37,7 +37,7 @@ def get_default_image_loader():
 def video_loader(video_dir_path, frame_indices, image_loader):
     video = []
     for i in frame_indices:
-        image_path = os.path.join(video_dir_path, 'image_{:05d}.jpg'.format(i))
+        image_path = os.path.join(video_dir_path, '{:05d}.jpg'.format(i))
         if os.path.exists(image_path):
             video.append(image_loader(image_path))
         else:
@@ -72,8 +72,9 @@ def get_video_names_and_annotations(data, subset):
     for key, value in data['database'].items():
         this_subset = value['subset']
         if this_subset == subset:
-            label = value['annotations']['label']
-            video_names.append('{}/{}'.format(label, key))
+            # label = value['annotations']['label']
+            # video_names.append('{}/{}'.format(label, key))
+            video_names.append(key)
             annotations.append(value['annotations'])
 
     return video_names, annotations
@@ -95,6 +96,9 @@ def make_dataset(root_path, annotation_path, subset, n_samples_for_each_video,
 
         video_path = os.path.join(root_path, video_names[i])
         if not os.path.exists(video_path):
+            # print(video_path)
+            # print('not exist')
+            # input('...')
             continue
 
         n_frames_file_path = os.path.join(video_path, 'n_frames')
@@ -108,7 +112,8 @@ def make_dataset(root_path, annotation_path, subset, n_samples_for_each_video,
             'video': video_path,
             'segment': [begin_t, end_t],
             'n_frames': n_frames,
-            'video_id': video_names[i].split('/')[1]
+            # 'video_id': video_names[i].split('/')[1]
+            'video_id': video_names[i]
         }
         if len(annotations) != 0:
             sample['label'] = class_to_idx[annotations[i]['label']]
@@ -116,11 +121,12 @@ def make_dataset(root_path, annotation_path, subset, n_samples_for_each_video,
             sample['label'] = -1
 
         if n_samples_for_each_video == 1:
-            sample['frame_indices'] = list(range(n_frames//2-sample_duration//2, 
-                                            n_frames//2+sample_duration//2))
-            dataset.append(sample)
             # sample['frame_indices'] = list(range(1, n_frames + 1))
             # dataset.append(sample)
+            head = max(1, n_frames//2-sample_duration//2)
+            tail = min(n_frames+1, n_frames//2+sample_duration//2)
+            sample['frame_indices'] = list(range(head, tail))
+            dataset.append(sample)
         else:
             if n_samples_for_each_video > 1:
                 step = max(1,
@@ -137,7 +143,7 @@ def make_dataset(root_path, annotation_path, subset, n_samples_for_each_video,
     return dataset, idx_to_class
 
 
-class UCF101(data.Dataset):
+class Something(data.Dataset):
     """
     Args:
         root (string): Root directory path.
@@ -165,7 +171,8 @@ class UCF101(data.Dataset):
                  sample_duration=16,
                  get_loader=get_default_video_loader, 
                  score_sens_mode=False, 
-                 score_inf_mode=False):
+                 score_inf_mode=False, 
+                 inner_temp_transform=None):
         self.data, self.class_names = make_dataset(
             root_path, annotation_path, subset, n_samples_for_each_video,
             sample_duration)
@@ -175,17 +182,24 @@ class UCF101(data.Dataset):
         self.target_transform = target_transform
         self.score_sens_mode = score_sens_mode
         self.score_inf_mode = score_inf_mode
+        self.inner_temp_transform = inner_temp_transform
         self.loader = get_loader()
+        # print(len(self.data))
 
     def _get_normal_plus_shuffle(self, index):
         path = self.data[index]['video']
         norm_frame_indices = self.data[index]['frame_indices']
-        # print('norm_indices:', norm_frame_indices)
+
+        # == in order to prevent something dataset lack of frames ==
+        norm_frame_indices = self.inner_temp_transform(norm_frame_indices)
+
         norm_clip = self.loader(path, norm_frame_indices)
         abnorm_frame_indices = self.temporal_transform(norm_frame_indices)
-        # print('abnorm_indices:', abnorm_frame_indices)
-        # input('...')
         abnorm_clip = self.loader(path, abnorm_frame_indices)
+        # print('norm_clip len:', len(norm_clip))
+        # print('abnorm_clip len:', len(abnorm_clip))
+        # if len(norm_clip) == 0:
+            # print(path)
         if self.spatial_transform is not None:
             self.spatial_transform.randomize_parameters()
             norm_clip = [self.spatial_transform(img) for img in norm_clip]
